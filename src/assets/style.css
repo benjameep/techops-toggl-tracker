@@ -2,7 +2,7 @@
   width:24%;
   min-width: 200px;
   max-width: 300px;
-  position:sticky;
+  position: sticky;
 }
 .main-content {
   width:100%;
@@ -29,19 +29,19 @@
   display:inline-block;
   vertical-align: middle;
 }
-#time-frame > button {
+.timeunit > button {
   color:dimgrey;
   background-color:#fff;
 }
-#time-frame > button[selected] {
+.timeunit > button.selected {
   background-color:#0366d6;
   color:#fff;
 }
-.time-button:hover:not([disabled]),
-.project-icons i:hover {
-  color:#0366d6;
+.time-button:hover:not(.disabled),
+.project-icon:hover path {
+  fill:#0366d6;
 }
-.time-button[disabled] {
+.time-button.disabled {
   color:lightgray;
 }
 .main-content.settings {
@@ -86,8 +86,8 @@ main[delete] .done.btn,
 main[select] .done.btn {
   display:inline-block;
 }
-main[edit] .project-icons i,
-main[delete] .project-icons i,
-main[select] .project-icons i {
+main[edit] .project-icon,
+main[delete] .project-icon,
+main[select] .project-icon {
   display:none;
 }

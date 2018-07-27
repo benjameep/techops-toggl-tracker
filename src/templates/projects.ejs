@@ -1,0 +1,55 @@
+<div class="border-bottom mb-5 d-flex flex-justify-between flex-items-end">
+  <h1 class="f00-light">Projects</h1>
+  <div class="d-flex">
+    <button class="done btn btn-primary my-3 mx-2" onclick="document.querySelector('main').removeAttribute('edit');document.querySelector('main').removeAttribute('delete');document.querySelector('main').removeAttribute('select')">Done</button>
+    <div class="project-icon py-3 px-2" onclick="document.querySelector('main').setAttribute('edit','edit')">
+      <i class="fa fa-pencil-alt fa-2x" ></i>
+    </div>
+    <div class="project-icon py-3 px-2" onclick="document.querySelector('main').setAttribute('select','select')">
+      <i class="fa fa-code-branch fa-2x"></i>
+    </div>
+    <div class="project-icon py-3 px-2" onclick="document.querySelector('main').setAttribute('delete','delete')">
+      <i class="fa fa-trash-alt fa-2x"></i>
+    </div>
+  </div>
+</div>
+<div class="Box border-0" id="project-list">
+  <div class="Box-row border-0 p-1 d-flex flex-items-center">
+    <button class="btn btn-danger btn-sm mr-3 display-during-delete">Delete</button>
+    <button class="btn btn-sm mr-3 display-during-select">Select</button>
+    <input type="color" class="btn mr-3 py-0 px-1 display-during-edit" value="#399eee" />
+    <div class="one-third">
+      <h3 class="project-title f3 mr-2">Techops Toggl Tracker</h3>
+      <input type="text" class="form-control h4 p-1 display-during-edit" style="width:90%;" value="Techops Toggl Tracker" />
+      <div class="text-small text-gray-light pl-2" style="border-color:blue">
+        <span>Benjamin, Seth, Daniel</span>
+        <br>
+        <span>14 hours</span>
+      </div>
+    </div>
+    <div class="two-thirds">
+      <svg width="100%" height="80px">
+        <rect width="1000" height="1000" fill="lightgray"></rect>
+      </svg>
+    </div>
+  </div>
+  <div class="Box-row border-0 p-1 d-flex flex-items-center">
+    <button class="btn btn-danger btn-sm mr-3 display-during-delete">Delete</button>
+    <button class="btn btn-sm mr-3 display-during-select">Select</button>
+    <input type="color" class="btn mr-3 py-0 px-1 display-during-edit" value="#399eee" />
+    <div class="one-third">
+      <h3 class="project-title f3 mr-2">Program Visualization</h3>
+      <input type="text" class="form-control h4 p-1 display-during-edit" style="width:90%;" value="Program Visualization" />
+      <div class="text-small text-gray-light pl-2" style="border-color:#399eee">
+        <span>Benjamin</span>
+        <br>
+        <span>58 hours</span>
+      </div>
+    </div>
+    <div class="two-thirds">
+      <svg width="100%" height="80px">
+        <rect width="1000" height="1000" fill="lightgray"></rect>
+      </svg>
+    </div>
+  </div>
+</div>

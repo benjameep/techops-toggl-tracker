@@ -1,10 +1,10 @@
 <div class="d-flex flex-wrap flex-lg-nowrap">
   <nav class="sidebar flex-column flex-justify-start overflow-auto border-right pb-4">
-    <a class="menu-item selected" href="./index.html">Time Tracking</a>
-    <a class="menu-item" href="./team.html">Team Overview</a>
-    <a class="menu-item" href="./projects.html">Projects</a>
+    <a class="menu-item <%= page=='timetracking'?'selected':'' %>" href="#timetracking">Time Tracking</a>
+    <a class="menu-item <%= page=='team'        ?'selected':'' %>" href="#team">Team Overview</a>
+    <a class="menu-item <%= page=='projects'    ?'selected':'' %>" href="#projects">Projects</a>
   </nav>
   <main class="main-content mt-4 pb-6 mx-auto px-3">
-    <%= _chart_(data) %>
+    <%= _main_(data) %>
   </main>
 </div>
