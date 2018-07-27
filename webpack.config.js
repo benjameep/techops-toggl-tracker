@@ -1,4 +1,6 @@
 const path = require('path');
+// const FaviconsWebpackPlugin = require('favicons-webpack-plugin')
+const HtmlWebpackPlugin = require('html-webpack-plugin')
 
 module.exports = {
   mode: 'development',
@@ -7,6 +9,14 @@ module.exports = {
     path: path.resolve(__dirname, 'docs'),
     filename: 'bundle.js'
   },
+  plugins:[
+    new HtmlWebpackPlugin({
+      title:'Techops Toggle Tracker',
+      inject:'head',
+      favicon:'logo/logo.png',
+      filename:'index.html',
+    })
+  ],
   module: {
     rules: [
       {

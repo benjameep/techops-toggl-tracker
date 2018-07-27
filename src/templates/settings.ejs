@@ -2,20 +2,20 @@
 <form>
   <dl class="form-group">
     <dt><label for="api-token">Toggl Api Token</label></dt>
-    <dd><input class="form-control input-monospace" type="text" placeholder="Toggl Api Token..." id="api-token"></dd>
+    <dd><input class="form-control input-monospace" type="text" placeholder="Toggl Api Token..." id="togglToken" value="<%= apiToken %>"></dd>
   </dl>
 
   <dl class="form-group">
     <dt><label for="workspace">Workspace</label></dt>
     <dd>
-      <select class="form-select" id="workspace" disabled>
-        <option></option>
-        <option>Work</option>
-        <option>Home</option>
+      <select class="form-select" id="workspace">
+        <% workspaces.forEach(workspace => { %>
+          <option value="<%= workspace.value %>"><%= workspace.name %></option>
+        <% }) %>
       </select>
     </dd>
   </dl>
 
 </form>
-<button class="btn mt-4" >Submit</button>
+<button id="settings-save" class="btn mt-4" >Submit</button>
 </main>

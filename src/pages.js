@@ -3,8 +3,12 @@ import _sidebar_ from './templates/sidebar.ejs'
 import _chart_ from './templates/chart.ejs'
 import _settings_ from './templates/settings.ejs'
 import _projects_ from './templates/projects.ejs'
+import _error_ from './templates/error.ejs'
 
 import chartEventHandlers from './scripts/chart'
+import projectsEventHandlers from './scripts/projects'
+import settingsEventHandlers from './scripts/settings'
+import loginEventHandlers from './scripts/login'
 
 let loaded = false
 let onload
@@ -40,10 +44,11 @@ export function team(data){
 export function settings(data){
   if(!loaded){ return onload = () => settings(data) }
   var html = _nav_({ includeSettingsButton: false });
-  html += _settings_(data)
+  var defaults = {apiToken:"",workspaces:[]}
+  html += _settings_(Object.assign(defaults,data))
   document.body.innerHTML = html
+  settingsEventHandlers()
 }
-
 
 export function projects(data){
   if(!loaded){ return onload = () => projects(data) }
@@ -53,5 +58,21 @@ export function projects(data){
     _main_:_projects_,
     data:data
   })
+  document.body.innerHTML = html
+  projectsEventHandlers()
+}
+
+export function login(){
+  if(!loaded){ return onload = () => login() }
+  var html = _nav_({ includeSettingsButton: false })
+  html += '<div id="firebaseui-auth-container"></div>'
+  document.body.innerHTML = html
+  loginEventHandlers()
+}
+
+export function error(err){
+  if(!loaded){ return onload = () => error(err) }
+  var html = _nav_({ includeSettingsButton: false })
+  html += _error_(err)
   document.body.innerHTML = html
 }
