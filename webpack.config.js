@@ -4,7 +4,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin')
 
 module.exports = {
   mode: 'development',
-  entry: './src/index.js',
+  entry: path.resolve(__dirname,'src/index.js'),
   output: {
     path: path.resolve(__dirname, 'docs'),
     filename: 'bundle.js'
@@ -13,7 +13,7 @@ module.exports = {
     new HtmlWebpackPlugin({
       title:'Techops Toggle Tracker',
       inject:'head',
-      favicon:'logo/logo.png',
+      favicon: path.resolve(__dirname,'src/assets/logo/logo.png'),
       filename:'index.html',
     })
   ],
