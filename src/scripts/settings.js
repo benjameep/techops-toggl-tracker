@@ -1,37 +1,57 @@
 import { get } from './toggl'
 import { user } from './database'
+import { error } from '../pages'
 
-function injectWorkspaces(){
-  get('/api/v8/workspaces').then(workspaces => {
-    // TODO: create a dynamic radio button array with which workspace to use
-    // (may be called multiple times)
-  }).catch(e => {
-    throw new Error('current token is invalid: '+e)
-  })
-}
-
-function save() {
-  var toggltoken = document.getElementById('togglToken').value
-  var workspace // TODO: if the workspace has been displayed, give the selected's id, otherwise undefined
-  if (!toggltoken && !user.toggltoken) {
-    throw new Error('no toggl token entered')
-  }
-  get('/api/v9/me',toggltoken || user.toggltoken)
-    .then(() => firebase.database().ref(`users/${uid}/toggltoken`).set(toggltoken || user.toggltoken))
-    .then(() => {
-      if (workspace != undefined) {
-        firebase.database().ref(`users/${uid}/workspace`).set(workspace)
-          .then(() => window.location.href = "./index.html")
-      }
-    })
-    .catch(() => {
-      // TODO actually display an error
-      throw new Error("Bad token")
-    })
-}
+const sels = ['#settings-togglToken','#settings-workspace','#settings-save']
 
 export default function(){
-  document.getElementById('settings-save').addEventListener('click',() => {
-    save()
+  let [$toggltoken,$workspace,$save] = sels.map(s => document.querySelector(s))
+  // Already has their toggltoken set
+  if(user.toggltoken){
+    $toggltoken.value = user.toggltoken
+    get(`/api/v8/workspaces`).then(workspaces => {
+      // remove old option
+      while ($workspace.hasChildNodes()) {
+        node.removeChild(node.lastChild);
+      }
+      // add new children
+      workspaces.forEach(workspace => {
+        var option = document.createElement('option')
+        option.value = workspace.id
+        option.innerText = workspace.name
+        $workspace.appendChild(option)
+      })
+      // select one
+      if(user.workspace){
+        $workspace.querySelector(`[value="${user.workspace}"]`).selected = true
+      } else {
+        $workspace.firstChild.selected = true
+      }
+    })
+  }
+  $save.addEventListener('click',() => {
+    // test the token
+    get('/api/v9/me',$toggltoken.value)
+      // token worked, now for the workspace
+      .then(() => {
+        let $selected = $workspace.options[$workspace.selectedIndex]
+        if($selected){
+          return $selected.value
+        } else {
+          return get(`/api/v8/workspaces`,$toggltoken.value)
+          .then(workspaces => workspaces[0].id)
+        }
+      })
+      // send update to the database
+      .then(workspace => {
+        firebase.database().ref('users/'+user.uid).update({
+          '/toggltoken': $toggltoken.value,
+          '/workspace': workspace
+        })
+      })
+      .catch(e => {
+        console.error('update to database failed')
+        throw e
+      })
   })
 }

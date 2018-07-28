@@ -58,8 +58,9 @@ function openpage(){
   }
 }
 
+window.addEventListener('hashchange',openpage)
+
 function main(){
-  window.addEventListener('hashchange',openpage)
   openpage()
   console.log('database')
   console.log(database.users)

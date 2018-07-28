@@ -1,6 +1,6 @@
-export let uid
-export let user
-export let users
+export let uid = ""
+export let user = {}
+export let users = []
 
 export function setUserData(data){
   uid = data.uid

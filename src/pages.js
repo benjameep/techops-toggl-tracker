@@ -9,6 +9,7 @@ import chartEventHandlers from './scripts/chart'
 import projectsEventHandlers from './scripts/projects'
 import settingsEventHandlers from './scripts/settings'
 import loginEventHandlers from './scripts/login'
+import * as database from './scripts/database'
 
 let loaded = false
 let onload
@@ -44,8 +45,7 @@ export function team(data){
 export function settings(data){
   if(!loaded){ return onload = () => settings(data) }
   var html = _nav_({ includeSettingsButton: false });
-  var defaults = {apiToken:"",workspaces:[]}
-  html += _settings_(Object.assign(defaults,data))
+  html += _settings_(data)
   document.body.innerHTML = html
   settingsEventHandlers()
 }
@@ -65,7 +65,7 @@ export function projects(data){
 export function login(){
   if(!loaded){ return onload = () => login() }
   var html = _nav_({ includeSettingsButton: false })
-  html += '<div id="firebaseui-auth-container"></div>'
+  html += '<div class="pt-6" id="firebaseui-auth-container"></div>'
   document.body.innerHTML = html
   loginEventHandlers()
 }
