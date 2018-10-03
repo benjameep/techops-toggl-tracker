@@ -2,17 +2,17 @@ import { get } from './toggl'
 import { user } from './database'
 import { error } from '../pages'
 
-const sels = ['#settings-togglToken','#settings-workspace','#settings-save']
+const sels = ['#settings-togglToken','#settings-workspace','#settings-save','.flash-error']
 
 export default function(){
-  let [$toggltoken,$workspace,$save] = sels.map(s => document.querySelector(s))
+  let [$toggltoken,$workspace,$save,$error] = sels.map(s => document.querySelector(s))
   // Already has their toggltoken set
   if(user.toggltoken){
     $toggltoken.value = user.toggltoken
     get(`/api/v8/workspaces`).then(workspaces => {
       // remove old option
       while ($workspace.hasChildNodes()) {
-        node.removeChild(node.lastChild);
+        $workspace.removeChild($workspace.lastChild);
       }
       // add new children
       workspaces.forEach(workspace => {
@@ -39,7 +39,7 @@ export default function(){
           return $selected.value
         } else {
           return get(`/api/v8/workspaces`,$toggltoken.value)
-          .then(workspaces => workspaces[0].id)
+            .then(workspaces => workspaces[0].id)
         }
       })
       // send update to the database
@@ -49,7 +49,14 @@ export default function(){
           '/workspace': workspace
         })
       })
+      // Everything worked
+      .then(() => {
+        // hide any errors that came up
+        $error.classList.add('d-none')
+      })
       .catch(e => {
+        $error.classList.remove('d-none')
+        $error.innerText = 'Something went wrong, Please check your Toggl Api Token'
         console.error('update to database failed')
         throw e
       })

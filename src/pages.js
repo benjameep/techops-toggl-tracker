@@ -24,7 +24,7 @@ export function timetracking(data){
   html += _sidebar_({
     page:'timetracking', 
     _main_:_chart_,
-    data:Object.assign({isPersonal:true},data)
+    data:Object.assign({isPersonal:true,database:database},data)
   })
   document.body.innerHTML = html
   chartEventHandlers()

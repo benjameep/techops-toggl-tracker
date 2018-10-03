@@ -14,9 +14,9 @@ import * as pages from './pages'
 import * as database from './scripts/database'
 import * as toggl from './scripts/toggl'
 
-import firebase from 'firebase/app'
-import 'firebase/auth'
-import 'firebase/database'
+import firebase from 'firebase'
+import 'firebase/auth/dist/index.cjs'
+import 'firebase/database/dist/index.cjs'
 window.firebase = firebase
 firebase.initializeApp({
   apiKey: "AIzaSyDivGb3qYsVppVyWu0kQP9TsMxJKVI_2EE",
@@ -28,7 +28,8 @@ firebase.initializeApp({
 })
 
 firebase.auth().onAuthStateChanged(user => {
-  if(user){
+  if(user){ 
+    console.log('user',user)
     // User is logged in, 
     database.setUserData({
       displayName: user.displayName,
@@ -37,7 +38,7 @@ firebase.auth().onAuthStateChanged(user => {
       uid: user.uid,
       admin: false
     })
-    database.openDatabase(err => {
+    database.onUserData(err => {
       if(err){ return pages.error(err) }
       main()
     })
