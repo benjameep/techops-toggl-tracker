@@ -63,6 +63,5 @@ window.addEventListener('hashchange',openpage)
 
 function main(){
   openpage()
-  console.log('database')
-  console.log(database.users)
+  console.log('database',database.users)
 }

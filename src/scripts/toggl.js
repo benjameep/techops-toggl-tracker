@@ -33,8 +33,9 @@ export async function report([start,end],user){
   console.log('toggldata:',data)
 
   // Not waiting for the database to be updated
-  // caller should just the data listeners to keep updated
-  database.updateEntries(data)
+  // caller should just use the data listeners to keep updated
+  // (faster load time)
+  database.updateDatabase(data)
   
   return data
 }
