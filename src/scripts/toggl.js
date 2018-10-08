@@ -27,7 +27,7 @@ export async function report([start,end],user){
     task.end = moment(task.end)
     var day = task.start.clone().startOf('day')
     task.time = [task.start,task.end].map(d => d.diff(day))
-    task.day = task.start.format('MM-DD-YYYY')
+    task.day = task.start.diff(start,'days')
     task.uid = user.uid
   })
   console.log('toggldata:',data)

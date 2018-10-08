@@ -1,15 +1,16 @@
-import _nav_ from './templates/nav.ejs'
-import _sidebar_ from './templates/sidebar.ejs'
-import _chart_ from './templates/chart.ejs'
-import _settings_ from './templates/settings.ejs'
-import _projects_ from './templates/projects.ejs'
-import _error_ from './templates/error.ejs'
+import _nav_      from './templates/nav.ejs'
+import _sidebar_  from './templates/sidebar.ejs'
+import _error_    from './templates/error.ejs'
+import _chart_    from './pages/chart.ejs'
+import _settings_ from './pages/settings.ejs'
+import _projects_ from './pages/projects.ejs'
 
-import chartEventHandlers from './scripts/chart'
-import projectsEventHandlers from './scripts/projects'
-import settingsEventHandlers from './scripts/settings'
-import loginEventHandlers from './scripts/login'
-import * as database from './scripts/database'
+import chartEventHandlers    from './pages/chart'
+import projectsEventHandlers from './pages/projects'
+import settingsEventHandlers from './pages/settings'
+import loginEventHandlers    from './pages/login'
+
+import * as database         from './scripts/database'
 
 let loaded = false
 let onload

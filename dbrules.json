@@ -1,0 +1,28 @@
+{
+  "rules": {
+    "projects":{
+      ".read": "auth.uid != null && root.child('users/'+auth.uid).exists()",
+      ".write": "root.child('users/'+auth.uid+'/admin').val() == true",
+      "$pid":{
+        ".write": "newData.child('users/'+auth.uid).exists() || data.child('users/'+auth.uid).exists()",
+			}
+    },
+    "pidmapping":{
+      ".read":"auth.uid != null && root.child('users/'+auth.uid).exists()",
+      ".write":"auth.uid != null && root.child('users/'+auth.uid).exists()",
+		},
+    "dailysums":{
+      ".read":"auth.uid != null && root.child('users/'+auth.uid).exists()",
+      ".write":"auth.uid != null && root.child('users/'+auth.uid).exists()",
+		},
+    "users":{
+      ".read": "root.child('users/'+auth.uid+'/admin').val() == true",
+      ".write": "root.child('users/'+auth.uid+'/admin').val() == true",
+      "$uid":{
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid",
+        ".validate": "newData.child('admin').val() != true || data.child('admin').val() == true",
+      }
+    }
+  }
+}

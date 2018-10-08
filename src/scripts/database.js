@@ -69,11 +69,10 @@ function getProjectUpdates(db, pids, entries, updates) {
   });
   /* Update existing projects */
   entries.forEach(entry => {
-    let togglpid = entry.pid;
-    entry.pid = pids[togglpid].pid;
-    updates[`projects/${entry.pid}/pids/${togglpid}`] = entry.project;
-    updates[`projects/${entry.pid}/users/${entry.uid}`] = entry.user;
-    updates[`projects/${entry.pid}/days/${entry.day}`] = true;
+    let pid = pids[entry.pid].pid;
+    updates[`projects/${pid}/pids/${entry.pid}`] = entry.project;
+    updates[`projects/${pid}/users/${entry.uid}`] = entry.user;
+    updates[`projects/${pid}/days/${entry.day}`] = true;
   });
 }
 
@@ -177,4 +176,3 @@ export async function updateDatabase(entries){
   // Send the update of all the sums that need to be incremented
   await db.ref().update(sumupdates)
 }
-
