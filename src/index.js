@@ -29,7 +29,9 @@ firebase.initializeApp({
 
 firebase.auth().onAuthStateChanged(user => {
   if(user){ 
-    console.log('user',user)
+    console.groupCollapsed('Authenticated')
+    console.log(user)
+    console.groupEnd()
     // User is logged in, 
     database.setUserData({
       displayName: user.displayName,
@@ -63,5 +65,7 @@ window.addEventListener('hashchange',openpage)
 
 function main(){
   openpage()
-  console.log('database',database.users)
+  console.groupCollapsed('Database')
+  console.log(database.users)
+  console.groupEnd()
 }

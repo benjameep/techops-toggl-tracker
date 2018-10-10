@@ -5,13 +5,31 @@ export let uid = ""
 export let user = {}
 export let users = []
 
+function on(path,cb){
+  const db = firebase.database()
+  var first = true
+  var ref = typeof path == 'string' ? db.ref(path) : path
+  return new Promise((resolve,reject) => {
+    ref.on('value',snapshot => {
+      if(first){
+        resolve(snapshot.val())
+        if(!cb) ref.off()
+        first = false
+      } else {
+        cb(snapshot)
+      }
+    },reject)
+  })
+}
+
 export function setUserData(data){
   uid = data.uid
   user = data
 }
 
 export function onUserData(cb){
-  var usersdb = firebase.database().ref('users');
+  const db = firebase.database()
+  var usersdb = db.ref('users');
   usersdb.child(user.uid).on('value',snapshot => {
     var snap = snapshot.val()
     if(snap == null){
@@ -33,7 +51,8 @@ export function onUserData(cb){
 }
 
 export function projects(cb){
-  var ref = firebase.database().ref('projects')
+  const db = firebase.database()
+  var ref = db.ref('projects')
   return new Promise((res,rej) => ref.once('value',snapshot => {
     var obj = {}
     snapshot.forEach(child => {
@@ -64,7 +83,7 @@ function getProjectUpdates(db, pids, entries, updates) {
   Object.entries(pids).filter(n => !n[1].pid).forEach(([togglpid]) => {
     let pid = pids[togglpid].pid = projectsref.push().key;
     updates[`pidmapping/${togglpid}`] = pid;
-    updates[`projects/${pid}/color`] = d3.interpolateRainbow(Math.random());
+    updates[`projects/${pid}/color`] = d3.hsl(Math.random()*360,1.5,0.28).hex();
     updates[`projects/${pid}/name`] = pids[togglpid].name;
   });
   /* Update existing projects */
@@ -142,7 +161,7 @@ async function getSumUpdates(db,watchlist){
 }
 
 export async function updateDatabase(entries){
-  var db = firebase.database()
+  const db = firebase.database()
 
   // Gathering all of the updates, to be sent in a single
   // more efficient post request
@@ -175,4 +194,55 @@ export async function updateDatabase(entries){
   
   // Send the update of all the sums that need to be incremented
   await db.ref().update(sumupdates)
+}
+
+export function ProjectWatcher(cb){
+  const nullfn = () => {}
+  const db = firebase.database()
+  const projectsref = db.ref('projects')
+
+  const projects = {}
+  const watchers = {}
+  const pidmapping = {}
+
+  const watcher = {}
+  let onproject = cb || nullfn
+
+  async function watch(tpid,ispushing=true){
+    if(!pidmapping[tpid]){
+      pidmapping[tpid] = await on('pidmapping/'+tpid,snapshot => {
+        // If the mapping changed later
+        console.info(`mapping for ${tpid} changed from ${pidmapping[tpid]} to ${snapshot.val()}`)
+        pidmapping[tpid] = snapshot.val()
+        watch(tpid)
+      })
+    }
+    var pid = pidmapping[tpid]
+
+    // If there was already a watcher there turn it off
+    if(watchers[tpid] && watchers[tpid].off) watchers[tpid].off()
+
+    watchers[tpid] = projectsref.child(pid+"")
+
+    projects[tpid] = await on(watchers[tpid],snapshot => {
+      // If project data changed later
+      console.groupCollapsed(`project for ${tpid} was modified`)
+      console.log('from:',projects[tpid])
+      console.log('to:',snapshot.val())
+      console.groupEnd()
+      projects[tpid] = snapshot.val()
+      onproject(projects)
+    })
+    if(ispushing) onproject(projects)
+  }
+
+  watcher.watch = function(tpids){
+    tpids = Array.isArray(tpids) ? tpids : [tpids]
+    tpids = tpids.filter(tpid => watchers[tpid] == undefined && (watchers[tpid] = 'waiting'))
+    Promise.all(tpids.map(tpid => watch(tpid,false))).then(() => onproject(projects))
+    return watcher
+  }
+  watcher.onproject = cb => ( onproject = cb, watcher )
+
+  return watcher
 }

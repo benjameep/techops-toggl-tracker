@@ -1,5 +1,6 @@
 import * as d3 from 'd3'
 import moment from 'moment'
+import * as database from '../scripts/database';
 
 function time(d) {
   var dur = moment.duration(d)
@@ -24,6 +25,10 @@ const margin = {
   innerLeft: 25, // The padding between the Time and first column
 }
 
+/* Project Watcher */
+let projectwatcher,
+  projects = {}
+
 /* Dimensions of the chart */
 let width,height
 
@@ -38,6 +43,7 @@ let
   background,
   $entries
 
+/* Called when the page first loads */
 export function initialize(container){
   /* Remove all of the children */
   d3.select(container).selectAll('*').remove()
@@ -51,10 +57,6 @@ export function initialize(container){
   width = svg.node().clientWidth - margin.left - margin.right - margin.innerLeft
   height = svg.node().clientHeight - margin.top - margin.bottom
 
-  /* Update the ranges of the axies */
-  x.rangeRound([margin.innerLeft, width+margin.innerLeft]).padding(0.1)
-  y.rangeRound([0, height])
-
   /* Create all of the containers */
   tooltip = d3.select(container).append('div').attr('class','tooltip')
   chart = svg.append("g").attr('class','chart').attr("transform", "translate(" + margin.left + "," + margin.top + ")")
@@ -64,44 +66,50 @@ export function initialize(container){
     .attr('fill','#eee')
     .attr('fill-opacity',0)
     .attr('y',2)
+    .attr('height',height-2)
   background = chart.append('rect')
     .attr('class','background')
     .attr('height',height)
     .attr('fill-opacity',0)
-    .on('mouseout',function(){
-      hoverbackground.attr('fill-opacity',0)
-      tooltip.classed("hidden", true);
-    })
-
-  $entries = chart.append('g').attr('class','entries')
-}
-
-/* Called everytime there is an update to the projects */
-function updateEntries(entries){
-  var _entries = $entries.selectAll('.entry').data(entries)
-  _entries.exit().remove()
-  _entries.enter().append('rect')
-    .attr('class','entry')
     .on('mousemove',onmousemove)
-  .merge(_entries)
-    .attr('x',d => x(d.day))
-    .attr('y',d => y(d.time[0]))
-    .attr('width',d => x.bandwidth())
-    .attr('height',d => y(d.time[1]) - y(d.time[0]))
-    .attr('fill',d => d.project_hex_color)
+    .on('mouseout',onmouseout)
+  $entries = chart.append('g').attr('class','entries')
+
+  /* Update the ranges of the axies */
+  x.rangeRound([margin.innerLeft, width+margin.innerLeft]).padding(0.1)
+  // Temporarily set to default 8am to 5pm, 
+  // will be updated when get actual data
+  y.rangeRound([0, height])
+    .domain([morning,afternoon])
+  updateYAxis()
+
+  projectwatcher = database.ProjectWatcher().onproject(updateProjects)
 }
 
-export function update([start,end],isWeek,entries){
-  y.domain([
-    Math.min(morning,...entries.map(d => d.time[0])),
-    Math.max(afternoon,...entries.map(d => d.time[1])),
-  ].map((n,i) => (Math.floor(n/(1000*60*60))+i)*1000*60*60))
+/* Called whenever the time frame changes */
+export function setTimeFrame([start,end],isWeek){
+
+  /* Format the X Axis */
   x.domain(d3.range(end.diff(start,'days')+1))
   xAxis.call(d3.axisTop(x)
     .tickFormat((d,i) => start.clone().add(i,'day').format(isWeek ? 'ddd D/M' : 'Do')))
   xAxis.select('.domain').remove()
   xAxis.selectAll('.tick line').remove()
   xAxis.selectAll('.tick text')
+
+  /* Update the background size */
+  background
+    .attr('width',x(x.domain().length-1)+x.bandwidth() - x(0))
+    .attr('x',x(0))
+  hoverbackground
+    .attr('width',x.bandwidth())
+
+  /* Remove all old children */
+  $entries.selectAll('rect').remove()
+}
+
+/* Called when need to update the y axis like when stretching from entries */
+function updateYAxis(){
   yAxis.call(d3.axisRight(y)
     .tickValues(d3.range(...y.domain(),(1000*60*60)))
     .tickFormat(d => moment().startOf('day').add(d).format('h A'))
@@ -109,18 +117,40 @@ export function update([start,end],isWeek,entries){
   yAxis.select('.domain').remove()
   yAxis.selectAll(".tick:not(:first-of-type) line").attr("stroke", "#ddd")
   yAxis.selectAll(".tick text").attr("x", 0).attr("dy", 12)
-  background
-    .attr('width',x(x.domain().length-1)+x.bandwidth() - x(0))
-    .attr('x',x(0))
-  hoverbackground
-    .attr('width',x.bandwidth())
-    .attr('height',y.range()[1])
+}
 
-  updateEntries(entries)
+/* Called everytime there is an update to the entries */
+export function setEntries(entries){
+  /* Register all of the projects we want to watch */
+  projectwatcher.watch(entries.map(entry => entry.pid))
+  /* Stretch the y domain to include all entries*/
+  y.domain([
+    Math.min(morning,...entries.map(d => d.time[0])),
+    Math.max(afternoon,...entries.map(d => d.time[1])),
+  ].map((n,i) => (Math.floor(n/(1000*60*60))+i)*1000*60*60))
+  updateYAxis()
 
-  background
+  var _entries = $entries.selectAll('.entry').data(entries)
+  _entries.exit().remove()
+  _entries.enter().append('rect')
+    .attr('class','entry')
     .on('mousemove',onmousemove)
-    .on('mouseout',onmouseout)
+  .merge(_entries)
+    .attr('x',d => x(d.daydiff))
+    .attr('y',d => y(d.time[0]))
+    .attr('width',d => x.bandwidth())
+    .attr('height',d => y(d.time[1]) - y(d.time[0]))
+}
+
+/* Called every time there is an update to the projects */
+function updateProjects(projects){
+  console.groupCollapsed('got an update for projects')
+  console.log(projects)
+  console.groupEnd()
+
+  /* Update the entry color */
+  $entries.selectAll('.entry')
+    .attr('fill',d => projects[d.pid] ? projects[d.pid].color : 'none')
 }
 
 function onmousemove(entry){
@@ -142,4 +172,5 @@ function onmousemove(entry){
 }
 function onmouseout(){
   tooltip.classed('hidden',true)
+  hoverbackground.attr('fill-opacity',0)
 }

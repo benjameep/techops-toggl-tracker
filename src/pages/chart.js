@@ -26,15 +26,21 @@ function getDFC(){
   }
 }
 
-async function loadChart(){
+function loadChart(){
+  // Set the page title
+  title.innerText = time.chartTitle()
   // if not set then true
   var isWeek = (localStorage.timeunit || 'week') == 'week'
-  title.innerText = time.chartTitle()
   var period = time.getPeriod()
+
+  draw.setTimeFrame(period,isWeek)
+  
   // retrieve the data from toggl
   // TODO: change which user it is getting based on dropdown
-  var data = await toggl.report(period,database.user)
-  draw.update(period,isWeek,data)
+  toggl.report(period,database.user,entries => {
+    /* callback is called multiple times for each pagination */
+    draw.setEntries(entries)
+  })
 }
 
 export default function(){

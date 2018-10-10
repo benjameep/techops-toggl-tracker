@@ -13,29 +13,35 @@ export function get(path,token=database.user.toggltoken){
   }).then(r => r.json())
 }
 
-export async function report([start,end],user){
+export async function report([start,end],user,intermid=()=>{}){
   var path = page => `/reports/api/v2/details?user_agent=bananas&workspace_id=${user.workspace}&since=${start.format('YYYY-MM-DD')}&until=${end.format('YYYY-MM-DD')}&page=${page}`
-  var page=1,data=[],body
+  var page=1,entries=[],body
   do{
     body = await get(path(page),user.toggltoken)
-    data = data.concat(body.data)
+    
+    body.data.forEach(entry => {
+      entry.start = moment(entry.start)
+      entry.end = moment(entry.end)
+      var day = entry.start.clone().startOf('day')
+      entry.time = [entry.start,entry.end].map(d => d.diff(day))
+      entry.daydiff = entry.start.diff(start,'days')
+      entry.day = entry.start.format('MM-DD-YYYY')
+      entry.uid = user.uid
+    })
+    entries.push(...body.data)
+    intermid(entries)
+
     page++
   } while(body.data.length >= body.per_page)
 
-  data.forEach(task => {
-    task.start = moment(task.start)
-    task.end = moment(task.end)
-    var day = task.start.clone().startOf('day')
-    task.time = [task.start,task.end].map(d => d.diff(day))
-    task.day = task.start.diff(start,'days')
-    task.uid = user.uid
-  })
-  console.log('toggldata:',data)
+  console.groupCollapsed('Toggl data')
+  console.log(entries)
+  console.groupEnd()
 
   // Not waiting for the database to be updated
   // caller should just use the data listeners to keep updated
   // (faster load time)
-  database.updateDatabase(data)
+  database.updateDatabase(entries)
   
-  return data
+  return entries
 }
