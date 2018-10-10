@@ -91,3 +91,18 @@ main[delete] .project-icon,
 main[select] .project-icon {
   display:none;
 }
+
+.tooltip {
+    position: absolute;
+    max-width: 200px;
+    height: auto;
+    padding: 5px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow:4px 4px 10px rgba(0,0,0,0.5);
+    pointer-events: none;
+    font-family: sans-serif;
+    font-size: 12px;
+    display: none;
+    opacity: .95
+}
