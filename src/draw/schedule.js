@@ -163,20 +163,34 @@ function updateProjects(projects) {
 function onmousemove(entry) {
     var mouse = d3.mouse(this)
 
-    /* Add a line on the mouse position */
-    // FIXME: Sometimes makes the background disappear
-    d3.select('#timeLine').remove()
-    var line = chart.append('line')
+    /* Add a line on the mouse position that says the time*/
+    // If it's one solid line, the background shading disappears sometimes, but adding a space fixes that
+    d3.selectAll('.timeLine').remove()
+    var line1 = chart.append('line')
         .attr('x1', 0)
-        .attr('x2', 752)
+        .attr('x2', mouse[0] - 5)
         .attr('y1', mouse[1])
         .attr('y2', mouse[1])
         .attr('stroke-width', 1)
         .attr('stroke', '#666666')
-        .attr('z-index', 1000)
-        .attr('id', 'timeLine')
+        .attr('class', 'timeLine')
+    var line2 = chart.append('line')
+        .attr('x1', mouse[0] + 5)
+        .attr('x2', 762)
+        .attr('y1', mouse[1])
+        .attr('y2', mouse[1])
+        .attr('stroke-width', 1)
+        .attr('stroke', '#666666')
+        .attr('class', 'timeLine')
 
-
+    d3.select('#timeText').remove()
+    chart.append('text')
+        .html('This will show the time once I figure that out')
+        .attr('x', mouse[0] + 3)
+        .attr('y', mouse[1] - 10)
+        .attr('id', 'timeText')
+        .attr('class', 'tooltip')
+        .style('display', 'unset')
 
 
     var column = Math.floor((mouse[0] - margin.innerLeft) / x.step())
@@ -202,5 +216,6 @@ function onmousemove(entry) {
 function onmouseout() {
     tooltip.style('display', 'none')
     hoverbackground.attr('fill-opacity', 0)
-    d3.select('#timeLine').remove()
+    d3.selectAll('.timeLine').remove()
+    d3.select('#timeText').remove()
 }
