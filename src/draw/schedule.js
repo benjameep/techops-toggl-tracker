@@ -53,6 +53,12 @@ export function initialize(container) {
         .attr('width', 752)
         .attr('height', 500)
 
+    d3.select('chart').append('line')
+        .attr('x1', 0)
+        .attr('x2', svg.width)
+        .attr('y1', 50)
+        .attr('y2', 55)
+
     /* Calculate the inner dimensions */
     width = svg.node().clientWidth - margin.left - margin.right - margin.innerLeft
     height = svg.node().clientHeight - margin.top - margin.bottom
@@ -72,7 +78,6 @@ export function initialize(container) {
         .attr('height', height)
         .attr('fill-opacity', 0)
         .on('mousemove', onmousemove)
-        // .on('mouseover', onmouseover)
         .on('mouseout', onmouseout)
     $entries = chart.append('g').attr('class', 'entries')
 
@@ -157,6 +162,23 @@ function updateProjects(projects) {
 
 function onmousemove(entry) {
     var mouse = d3.mouse(this)
+
+    /* Add a line on the mouse position */
+    // FIXME: Sometimes makes the background disappear
+    d3.select('#timeLine').remove()
+    var line = chart.append('line')
+        .attr('x1', 0)
+        .attr('x2', 752)
+        .attr('y1', mouse[1])
+        .attr('y2', mouse[1])
+        .attr('stroke-width', 1)
+        .attr('stroke', '#666666')
+        .attr('z-index', 1000)
+        .attr('id', 'timeLine')
+
+
+
+
     var column = Math.floor((mouse[0] - margin.innerLeft) / x.step())
     hoverbackground
         .attr('x', x(column))
@@ -166,9 +188,11 @@ function onmousemove(entry) {
     if (entry) {
         tooltip.style('display', 'unset')
 
-        console.log('Entry: ', entry)
+        let tooltipHtml = `<div>${time(entry.time[1] - entry.time[0])}</div>
+        <div>${entry.project || ''}</div>
+        <div>${entry.description}</div>`;
 
-        tooltip.html(`<p>${time(entry.time[1] - entry.time[0])}</p><p>${entry.project || entry.description}</p>`)
+        tooltip.html(tooltipHtml)
             .style('left', d3.event.pageX + 15 + 'px')
             .style('top', d3.event.pageY + -5 + 'px')
     } else {
@@ -178,19 +202,5 @@ function onmousemove(entry) {
 function onmouseout() {
     tooltip.style('display', 'none')
     hoverbackground.attr('fill-opacity', 0)
+    d3.select('#timeLine').remove()
 }
-
-// /** Possibly use this instead of on mouse move. */
-// function onmouseover(entry) {
-//     if (entry) {
-//         tooltip.style('display', 'unset')
-
-//         tooltip.html(time(entry.time[1] - entry.time[0]))
-//             .style('left', d3.event.pageX + 'px')
-//             .style('top', d3.event.pageY + 'px')
-//     } else {
-//         tooltip.style('display', 'none')
-
-//     }
-
-// }
