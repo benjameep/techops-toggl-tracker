@@ -85,6 +85,7 @@ export default function () {
     dropdown = document.querySelectorAll('#users-dropdown a')
 
     // TODO: Add listener to change user dropdown
+    //FIXME: Doesn't remember the user between pages
     Array.from(dropdown).forEach(dropdownItem => {
         dropdownItem.addEventListener('click', () => {
             var period = time.getPeriod()
