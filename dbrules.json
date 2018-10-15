@@ -20,7 +20,7 @@
       ".write": "root.child('users/'+auth.uid+'/admin').val() == true",
       "$uid":{
         ".read": "$uid === auth.uid",
-        ".write": "$uid === auth.uid",
+        ".write": "root.child('github/'+auth.token.firebase.identities['github.com'][0]).exists()",
         ".validate": "newData.child('admin').val() != true || data.child('admin').val() == true",
       }
     }
