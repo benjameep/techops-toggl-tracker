@@ -37,8 +37,7 @@ firebase.auth().onAuthStateChanged(user => {
       displayName: user.displayName,
       email: user.email,
       photoURL: user.photoURL,
-      uid: user.uid,
-      admin: false
+      uid: user.uid
     })
     database.onUserData(err => {
       if(err){ return pages.error(err) }
