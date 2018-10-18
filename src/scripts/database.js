@@ -25,7 +25,17 @@ function on(path,cb){
 export function setUserData(data){
   uid = data.uid
   user = data
-  firebase.database().ref('users/'+uid).update(user).catch(err => {
+
+  var updates = {}
+  for(var key in data){
+    updates[`users/${uid}/${key}`] = data[key]
+  }
+
+  console.groupCollapsed(`updating user $uid}`)
+  console.log(updates)
+  console.groupEnd()
+
+  firebase.database().ref().update(updates).catch(err => {
     console.error('error writing the data')
     console.log(err)
   })
@@ -39,19 +49,7 @@ export function onUserData(cb){
     console.log('got a response',snapshot.val())
     var snap = snapshot.val()
     if(snap == null) return console.error('null for the user')
-    // {
-    //   console.groupCollapsed(`creating user ${user.uid}`)
-    //   console.log(user)
-    //   console.groupEnd()
-    //   usersdb.child(user.uid).set(user,err => {
-    //     console.error('error writing the data')
-    //     console.log(err)
-    //   }).catch(err => {
-    //     console.error('error writing the data')
-    //     console.log(err)
-    //   })
-    //   return
-    // }
+    
     if(snap.admin == true){
       usersdb.on('value', snapshot => {
         users = snapshot.val();
