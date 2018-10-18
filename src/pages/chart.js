@@ -4,7 +4,7 @@ import * as database from '../scripts/database';
 import * as draw from '../draw/schedule';
 
 const sels = ['.time-button.forwards', '.time-button.backwards', 'button[data-timeunit="week"]', 'button[data-timeunit="month"]', '.chart-title'];
-let forward, backward, week, month, title, dropdown, currentuser;
+let forward, backward, week, month, title, dropdown;
 
 function setDFC(dist) {
     if (isNaN(dist)) {
@@ -35,35 +35,34 @@ function loadChart() {
 
     draw.setTimeFrame(period, isWeek);
 
+    var splash = document.querySelector('.svg-container .blankslate');
+    var svg = document.querySelector('.svg-container svg');
+
+    splash.classList.add('d-none');
+    svg.classList.remove('d-none');
+
     // retrieve the data from toggl
-    // TODO: try catch 
-    try {
-        toggl.report(period, currentuser, entries => {
-            /* callback is called multiple times for each pagination */
-            draw.setEntries(entries);
-        });
-    }
-    catch (err) {
-        d3.select('svg')
-            .innerHTML(
-                `<div class="blankslate d-flex flex-justify-center">
-                    <div class="flex-self-center">
-                        <h3>Missing API Token</h3>
-                        <p>Please go to settings and enter your Toggl API Token</p>
-                    </div>
-                </div>`
-            );
-    }
+    toggl.report(period, database.user, entries => {
+        /* callback is called multiple times for each pagination */
+        draw.setEntries(entries);
+    }).catch(err => {
+        console.log('Behold an error: ', err);
+
+        // TODO: display error
+
+        splash.classList.remove('d-none');
+        svg.classList.add('d-none');
+    });
 }
 
 export default function () {
+    console.log('I got run!');
 
     [forward, backward, week, month, title] = sels.map(s => document.querySelector(s));
 
     setDFC(getDFC());
 
     draw.initialize(document.querySelector('.svg-container'));
-    currentuser = database.user;
     loadChart();
 
     backward.addEventListener('click', () => {
@@ -98,14 +97,12 @@ export default function () {
 
     dropdown = document.querySelectorAll('#users-dropdown a');
 
-    // TODO: Add listener to change user dropdown
     //FIXME: Doesn't remember the user between pages
     Array.from(dropdown).forEach(dropdownItem => {
         dropdownItem.addEventListener('click', () => {
-
-            currentuser = database.users[dropdownItem.getAttribute('value')];
+            database.user = database.users[dropdownItem.getAttribute('value')];
+            document.querySelector('summary').innerHTML = database.user.displayName;
             loadChart();
         });
-
     });
 }

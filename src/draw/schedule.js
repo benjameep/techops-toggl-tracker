@@ -45,8 +45,6 @@ let
 
 /* Called when the page first loads */
 export function initialize(container) {
-    /* Remove all of the children */
-    d3.select(container).selectAll('*').remove();
 
     /* Create the SVG */
     svg = d3.select(container).append('svg')

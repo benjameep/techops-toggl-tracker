@@ -2,7 +2,7 @@ import * as database from './database'
 import { error } from '../pages'
 import moment from 'moment'
 
-export function get(path, token = database.user.toggltoken) {
+export function get(path, token) {
     if (token == undefined) {
         throw new Error('Toggl Api Token was not set')
     }
@@ -25,7 +25,7 @@ export async function report([start, end], user, intermid = () => { }) {
             var day = entry.start.clone().startOf('day')
             entry.time = [entry.start, entry.end].map(d => d.diff(day))
             entry.daydiff = entry.start.diff(start, 'days')
-            entry.day = entry.start.format('MM-DD-YYYY')
+            entry.day = entry.start.format('MM-DD-YYYY');
             entry.uid = user.uid
         })
         entries.push(...body.data)
