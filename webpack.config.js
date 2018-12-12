@@ -15,7 +15,7 @@ module.exports = {
       inject:'head',
       favicon: path.resolve(__dirname,'src/assets/logo/logo.png'),
       filename:'index.html',
-    })
+    }),
   ],
   module: {
     rules: [
@@ -32,5 +32,9 @@ module.exports = {
       { test: /\.ejs$/, loader: 'ejs-loader' },
       { test: /\.css$/, use: [ 'style-loader', 'css-loader' ] }
     ]
-  }
+  },
+  devtool: 'inline-source-map',
+  devServer: {
+    contentBase: path.resolve(__dirname, 'dist'),
+  },
 };

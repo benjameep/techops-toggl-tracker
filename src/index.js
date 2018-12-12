@@ -14,7 +14,7 @@ import * as pages from './pages';
 import * as database from './scripts/database';
 import * as toggl from './scripts/toggl';
 
-import firebase from 'firebase';
+import firebase from 'firebase/app';
 import 'firebase/auth/dist/index.cjs';
 import 'firebase/database/dist/index.cjs';
 window.firebase = firebase;

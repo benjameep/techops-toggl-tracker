@@ -1,8 +1,8 @@
 import moment from 'moment';
 
 export function getPeriod() {
-    var dfc = Number(localStorage.distanceFromCurrent || 0);
-    if (localStorage.timeunit == 'month') {
+    var dfc = Number(sessionStorage.distanceFromCurrent || 0);
+    if (sessionStorage.timeunit == 'month') {
         return [
             moment().subtract(dfc, 'month').startOf('month'),
             moment().subtract(dfc, 'month').endOf('month')
@@ -17,7 +17,7 @@ export function getPeriod() {
 
 export function chartTitle() {
     var [start, end] = getPeriod();
-    if (localStorage.timeunit == 'month') {
+    if (sessionStorage.timeunit == 'month') {
         return start.format('MMMM YYYY');
     } else {
         if (start.month() == end.month()) {

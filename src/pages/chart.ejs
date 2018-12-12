@@ -5,9 +5,9 @@
             <i class="fas fa-chevron-left fa-3x"></i>
         </div>
         <div class="timeunit BtnGroup mx-4">
-            <button class="btn BtnGroup-item btn-outline <%= (localStorage.timeunit||'week')=='week' ? 'selected':'' %>"
+            <button class="btn BtnGroup-item btn-outline <%= (sessionStorage.timeunit||'week')=='week' ? 'selected':'' %>"
                 type="button" data-timeunit="week">Week</button>
-            <button class="btn BtnGroup-item btn-outline <%= localStorage.timeunit=='month' ? 'selected':'' %>" type="button"
+            <button class="btn BtnGroup-item btn-outline <%= sessionStorage.timeunit=='month' ? 'selected':'' %>" type="button"
                 data-timeunit="month">Month</button>
         </div>
         <div class="time-button forwards">

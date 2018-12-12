@@ -40,6 +40,8 @@ let
     xAxis,
     yAxis,
     hoverbackground,
+    hoverLine,
+    hoverTime,
     background,
     $entries;
 
@@ -66,6 +68,18 @@ export function initialize(container) {
     chart = svg.append("g").attr('class', 'chart').attr("transform", "translate(" + margin.left + "," + margin.top + ")");
     xAxis = chart.append("g").attr('class', 'axis axis--x');
     yAxis = chart.append("g").attr('class', 'axis axis--y');
+
+    hoverLine = chart.append("line")
+        .attr('stroke-width', .5)
+        .attr('stroke', '#bbb')
+        .attr('x1', 0)
+        .attr('x2', width + margin.innerLeft)
+    hoverTime = chart.append('text')
+        .attr('fill','#bbb')
+        .attr('font-size',12)
+        .attr('text-anchor','end')
+        .attr('x', width + margin.innerLeft)
+        
     hoverbackground = chart.append('rect')
         .attr('fill', '#eee')
         .attr('fill-opacity', 0)
@@ -163,32 +177,16 @@ function onmousemove(entry) {
 
     /* Add a line on the mouse position that says the time*/
     // If it's one solid line, the background shading disappears sometimes, but adding a space fixes that
-    d3.selectAll('.timeLine').remove();
-    var line1 = chart.append('line')
-        .attr('x1', 0)
-        .attr('x2', mouse[0] - 5)
+    hoverLine
         .attr('y1', mouse[1])
         .attr('y2', mouse[1])
-        .attr('stroke-width', 1)
-        .attr('stroke', '#666666')
-        .attr('class', 'timeLine');
-    var line2 = chart.append('line')
-        .attr('x1', mouse[0] + 5)
-        .attr('x2', 762)
-        .attr('y1', mouse[1])
-        .attr('y2', mouse[1])
-        .attr('stroke-width', 1)
-        .attr('stroke', '#666666')
-        .attr('class', 'timeLine');
+        .attr('stroke-opacity', 1);
+    
+    var timeOfDay = moment().startOf('day').milliseconds(y.invert(mouse[1])).format('h:mma')
 
-    d3.select('#timeText').remove();
-    chart.append('text')
-        .html('This will show the time once I figure that out')
-        .attr('x', mouse[0] + 3)
-        .attr('y', mouse[1] - 10)
-        .attr('id', 'timeText')
-        .attr('class', 'tooltip')
-        .style('display', 'unset');
+    hoverTime
+        .attr('y', mouse[1] - 5)
+        .html(timeOfDay)
 
 
     var column = Math.floor((mouse[0] - margin.innerLeft) / x.step());
@@ -214,6 +212,6 @@ function onmousemove(entry) {
 function onmouseout() {
     tooltip.style('display', 'none');
     hoverbackground.attr('fill-opacity', 0);
-    d3.selectAll('.timeLine').remove();
-    d3.select('#timeText').remove();
+    hoverLine.attr('stroke-opacity', 0);
+    hoverTime.html('')
 }
