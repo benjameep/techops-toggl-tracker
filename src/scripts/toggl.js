@@ -34,7 +34,7 @@ export async function report([start, end], user) {
     console.log(entries)
     console.groupEnd()
 
-    database.updateDatabase([start,end],entries)
+    database.updateDatabase([start,end],entries,user.uid)
 
     return entries
 }
