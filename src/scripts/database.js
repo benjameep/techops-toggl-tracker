@@ -1,5 +1,5 @@
 import  * as d3 from 'd3'
-
+import * as toggl from './toggl'
 
 export let uid = ""
 export let user = {}
@@ -31,7 +31,7 @@ export function setUserData(data){
     updates[`users/${uid}/${key}`] = data[key]
   }
 
-  console.groupCollapsed(`updating user $uid}`)
+  console.groupCollapsed(`updating user ${uid}`)
   console.log(updates)
   console.groupEnd()
 
@@ -45,22 +45,11 @@ export function onUserData(cb){
   console.log('onUserData')
   const db = firebase.database()
   var usersdb = db.ref('users');
-  usersdb.child(user.uid).on('value',snapshot => {
+  usersdb.on('value',snapshot => {
     console.log('got a response',snapshot.val())
-    var snap = snapshot.val()
-    if(snap == null) return console.error('null for the user')
-    
-    if(snap.admin == true){
-      usersdb.on('value', snapshot => {
-        users = snapshot.val();
-        user = users[uid]
-        cb(null);
-      },cb)
-    } else {
-      users = {[user.uid]:snap}
-      user = snap
-      cb(null)
-    }
+    users = snapshot.val();
+    user = users[uid]
+    cb(null);
   },cb)
 }
 
@@ -79,7 +68,7 @@ export function projects(cb){
 async function getPids(db,entries){
   var pidsref = db.ref('pidmapping')
   /* Get list of unique pids */
-  var pids = entries.reduce((obj,entry) => (obj[entry.pid] = {name:entry.project,pid:null},obj),{})
+  var pids = entries.reduce((obj,entry) => (obj[entry.pid] = {},obj),{})
   await Promise.all(Object.keys(pids).map(togglpid => new Promise((resolve,reject) => {
     pidsref.child(togglpid).once('value',snapshot => {
       /* Update that list with the databases current value */
@@ -98,31 +87,92 @@ function getProjectUpdates(db, pids, entries, updates) {
     let pid = pids[togglpid].pid = projectsref.push().key;
     updates[`pidmapping/${togglpid}`] = pid;
     updates[`projects/${pid}/color`] = d3.hsl(Math.random()*360,1.5,0.28).hex();
-    updates[`projects/${pid}/name`] = pids[togglpid].name;
   });
   /* Update existing projects */
   entries.forEach(entry => {
     let pid = pids[entry.pid].pid;
-    updates[`projects/${pid}/pids/${entry.pid}`] = entry.project;
-    updates[`projects/${pid}/users/${entry.uid}`] = entry.user;
+    updates[`projects/${pid}/pids/${entry.pid}`] = entry.pid||'undefined';
+    updates[`projects/${pid}/users/${entry.uid}`] = entry.uid;
     updates[`projects/${pid}/days/${entry.day}`] = true;
+    updates[`dailysums/${entry.day}/pids/${entry.pid}/${entry.uid}`] = true;
   });
 }
 
-function getEntryUpdates(db, entries, updates) {
+function getEntryUpdates(entries, updates) {
   /* Update the dailysum entries */
   const watchlist = {};
+  
   entries.forEach(entry => {
-    let { day, pid, uid, id, time } = entry;
-    let path = `dailysums/${day}/projects/${pid}/users/${uid}`;
-    watchlist[path] = watchlist[path] || { entry: entry, diff: 0 };
-    updates[path + '/entries/' + id] = Math.floor((time[1] - time[0]) / 1000);
-  });
+    let { day, pid, uid, id, duration } = entry;
+    let path = `dailysums/${day}/projects/${pid}/users/${uid}`
+    updates[path] = updates[path] || {entries:{},sum:0}
+    watchlist[path] = entry.day
+    updates[path].entries[id] = duration
+    updates[path].sum += duration
+  })
   
   return watchlist
 }
 
-async function createWatchers(db,watchlist){
+async function removeMissingEntries(db,[start,end],entries,usr,updates,daysThatNeedUpdates){
+  const dailysums = db.ref('dailysums')
+  const delimiter = ';'
+  
+  var used = entries.reduce((o,e) => (o[e.day+delimiter+e.pid] = true,o),{})
+
+  var alldays = Array(end.diff(start,'days')).fill()
+    .map((n,i) => start.clone().add(i,'days').format('MM-DD-YYYY'))
+  
+  await Promise.all(alldays.map(day => new Promise((resolve,reject) => {
+    dailysums.child(day+'/pids').once('value',snapshot => {
+      if(snapshot.exists()){
+        let pids = snapshot.val()
+        let removalupdates = {}
+
+        /* Find the projects we no longer work on */
+        Object.keys(pids)
+          .filter(pid => pids[pid][usr]) // Those that say we should be using it
+          .filter(pid => !used[day+delimiter+pid]) // But we actually aren't
+          .forEach(pid => {
+            // Remove them
+            delete pids[pid][usr]
+            removalupdates = {
+              [`dailysums/${day}/pids/${pid}/${usr}`]: null,
+              [`dailysums/${day}/projects/${pid}/users/${usr}`]:null
+            }
+            daysThatNeedUpdates[day] = true // update sums
+            console.info(`${usr} was removed from project ${pid}`)
+          })
+          
+        /* Clean up projects with no users */
+        Object.keys(pids)
+          .filter(pid => !Object.keys(pids[pid]).length)
+          .forEach(pid => {
+            delete pids[pid]
+            removalupdates = {
+              [`dailysums/${day}/pids/${pid}`]: null,
+              [`dailysums/${day}/projects/${pid}`]:null
+            }
+            daysThatNeedUpdates[day] = true // update sums
+            console.info(`project ${pid} was removed`)
+          })
+
+        /* Remove the entire day if it has nothing left */
+        if(!Object.keys(pids).length){
+          removalupdates = {
+            [`dailysums/${day}`]: null,
+          }
+          delete daysThatNeedUpdates[day]
+          console.info(`day ${day} was removed`)
+        }
+        Object.assign(updates,removalupdates)
+      }
+      resolve()
+    },reject)
+  })))
+}
+
+async function createWatchers(db,watchlist,daysThatNeedUpdates){
   /* Create List of watchers and wait for them to get their initial value */
   return await Promise.all(Object.keys(watchlist).map(path => new Promise((resolve, reject) => {
     var initialvalue = undefined;
@@ -140,11 +190,7 @@ async function createWatchers(db,watchlist){
       else {
         // We are being called again which means that there was
         // an update to the database and all the sums need to be updated
-        var entries = snapshot.val().entries;
-        var sum = Object.values(entries).reduce((a, b) => a + b);
-        // Record the difference (using this to add to sum of parents)
-        var diff = sum - initialvalue;
-        watchlist[path].diff = diff;
+        daysThatNeedUpdates[watchlist[path]] = true
       }
     }, reject);
   })));
@@ -174,7 +220,36 @@ async function getSumUpdates(db,watchlist){
   return sumupdates
 }
 
-export async function updateDatabase(entries){
+async function updateSums(db,daysThatNeedUpdates){
+  const dailysums = db.ref('dailysums')
+  const updates = {}
+  await Promise.all(Object.keys(daysThatNeedUpdates).map(day => new Promise((resolve,reject) => {
+    dailysums.child(day+'/projects').once('value',snapshot => {
+      var projects = snapshot.val()
+      if(!projects) console.error('trying to update a project that doesn\'t exist')
+      var daysum = 0
+      Object.entries(projects).forEach(([pid,project]) => {
+        var projectsum = 0
+        Object.entries(project.users).forEach(([uid,user]) => {
+          var usersum = 0
+          Object.values(user.entries).forEach(entry => usersum += entry)
+          updates[`dailysums/${day}/projects/${pid}/users/${uid}/sum`] = usersum
+          projectsum += usersum
+        })
+        updates[`dailysums/${day}/projects/${pid}/sum`] = projectsum
+        daysum += projectsum
+      })
+      updates[`dailysums/${day}/sum`] = daysum
+      resolve()
+    },reject)
+  })))
+  return updates
+}
+
+export async function updateDatabase(period,entries,usr){
+  
+  toggl.get(`/api/v8/time_entries?start_date=${period[0].toISOString()}&end_date=${period[1].toISOString()}`,user.toggltoken)
+
   const db = firebase.database()
 
   // Gathering all of the updates, to be sent in a single
@@ -189,11 +264,14 @@ export async function updateDatabase(entries){
 
   // Add updates for the entries
   // returns a list of paths that need to be watched
-  var watchlist = getEntryUpdates(db,entries,updates)
+  var watchlist = getEntryUpdates(entries,updates)
+  
+  let daysThatNeedUpdates = {}
+  await removeMissingEntries(db,period,entries,usr,updates,daysThatNeedUpdates)
 
   // Create watchers on all the entries we are updating
   // so that we know which ones get changed
-  var watchers = await createWatchers(db,watchlist)
+  var watchers = await createWatchers(db,watchlist,daysThatNeedUpdates)
   
   // Send the updates for the projects and entries
   await db.ref().update(updates)
@@ -204,8 +282,8 @@ export async function updateDatabase(entries){
   watchers.forEach(watcher => watcher.off())
 
   // Get updates for parent sums that need to be incremented
-  var sumupdates = await getSumUpdates(db,watchlist)
-  
+  var sumupdates = await updateSums(db,daysThatNeedUpdates)
+
   // Send the update of all the sums that need to be incremented
   await db.ref().update(sumupdates)
 }

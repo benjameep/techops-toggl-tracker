@@ -15,14 +15,14 @@ function setDFC(dist) {
     } else {
         forward.classList.remove('disabled');
     }
-    localStorage.distanceFromCurrent = dist;
+    sessionStorage.distanceFromCurrent = dist;
 }
 function getDFC() {
-    if (isNaN(localStorage.distanceFromCurrent)) {
+    if (isNaN(sessionStorage.distanceFromCurrent)) {
         setDFC('0');
         return 0;
     } else {
-        return Number(localStorage.distanceFromCurrent);
+        return Number(sessionStorage.distanceFromCurrent);
     }
 }
 
@@ -30,7 +30,7 @@ function loadChart() {
     // Set the page title
     title.innerText = time.chartTitle();
     // if not set then true
-    var isWeek = (localStorage.timeunit || 'week') == 'week';
+    var isWeek = (sessionStorage.timeunit || 'week') == 'week';
     var period = time.getPeriod();
 
     draw.setTimeFrame(period, isWeek);
@@ -42,21 +42,19 @@ function loadChart() {
     svg.classList.remove('d-none');
 
     // retrieve the data from toggl
-    toggl.report(period, database.user, entries => {
-        /* callback is called multiple times for each pagination */
-        draw.setEntries(entries);
-    }).catch(err => {
-        console.log('Behold an error: ', err);
+    toggl.report(period, database.user)
+        .then(entries => draw.setEntries(entries))
+        .catch(err => {
+            console.log('Behold an error: ', err);
 
-        // TODO: display error
-
-        splash.classList.remove('d-none');
-        svg.classList.add('d-none');
-    });
+            // TODO: display error
+    
+            splash.classList.remove('d-none');
+            svg.classList.add('d-none');
+        })
 }
 
 export default function () {
-    console.log('I got run!');
 
     [forward, backward, week, month, title] = sels.map(s => document.querySelector(s));
 
@@ -78,18 +76,18 @@ export default function () {
     });
 
     week.addEventListener('click', () => {
-        if ((localStorage.timeunit || 'week') == 'week') { return; }
+        if ((sessionStorage.timeunit || 'week') == 'week') { return; }
         setDFC('0');
-        localStorage.timeunit = 'week';
+        sessionStorage.timeunit = 'week';
         week.classList.add('selected');
         month.classList.remove('selected');
         loadChart();
     });
 
     month.addEventListener('click', () => {
-        if (localStorage.timeunit == 'month') { return; }
+        if (sessionStorage.timeunit == 'month') { return; }
         setDFC('0');
-        localStorage.timeunit = 'month';
+        sessionStorage.timeunit = 'month';
         month.classList.add('selected');
         week.classList.remove('selected');
         loadChart();
