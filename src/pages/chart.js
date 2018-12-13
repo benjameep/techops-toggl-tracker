@@ -1,10 +1,10 @@
-import * as time from '../scripts/time';
-import * as toggl from '../scripts/toggl';
 import * as database from '../scripts/database';
-import * as draw from '../draw/schedule';
+import * as time from '../scripts/time';
 
 const sels = ['.time-button.forwards', '.time-button.backwards', 'button[data-timeunit="week"]', 'button[data-timeunit="month"]', '.chart-title'];
 let forward, backward, week, month, title, dropdown;
+
+let draw
 
 function setDFC(dist) {
     if (isNaN(dist)) {
@@ -26,37 +26,21 @@ function getDFC() {
     }
 }
 
-function loadChart() {
+function loadChart(){
     // Set the page title
     title.innerText = time.chartTitle();
+
     // if not set then true
     var isWeek = (sessionStorage.timeunit || 'week') == 'week';
     var period = time.getPeriod();
-
-    draw.setTimeFrame(period, isWeek);
-
-    var splash = document.querySelector('.svg-container .blankslate');
-    var svg = document.querySelector('.svg-container svg');
-
-    splash.classList.add('d-none');
-    svg.classList.remove('d-none');
-
-    // retrieve the data from toggl
-    toggl.report(period, database.user)
-        .then(entries => draw.setEntries(entries))
-        .catch(err => {
-            console.log('Behold an error: ', err);
-
-            // TODO: display error
-    
-            splash.classList.remove('d-none');
-            svg.classList.add('d-none');
-        })
+  
+    draw.setTimeFrame(period, isWeek)
 }
 
-export default function () {
-
+export default function (drawfn) {
     [forward, backward, week, month, title] = sels.map(s => document.querySelector(s));
+
+    draw = drawfn
 
     setDFC(getDFC());
 
