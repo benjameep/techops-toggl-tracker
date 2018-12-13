@@ -12,6 +12,9 @@ import loginEventHandlers from './pages/login';
 
 import * as database from './scripts/database';
 
+import * as drawSchedule from './draw/schedule';
+import * as drawProjects from './draw/projects';
+
 let loaded = false;
 let onload;
 window.addEventListener('load', () => {
@@ -28,7 +31,7 @@ export function timetracking(data) {
         data: Object.assign({ isPersonal: true, database: database }, data)
     });
     document.body.innerHTML = html;
-    chartEventHandlers();
+    chartEventHandlers(drawSchedule);
 }
 
 export function team(data) {
@@ -40,7 +43,7 @@ export function team(data) {
         data: Object.assign({ isPersonal: false }, data)
     });
     document.body.innerHTML = html;
-    chartEventHandlers();
+    chartEventHandlers(drawProjects);
 }
 
 export function settings(data) {

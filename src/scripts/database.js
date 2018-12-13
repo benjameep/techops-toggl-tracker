@@ -79,15 +79,23 @@ async function getPids(db,entries){
   return pids
 }
 
-function getProjectUpdates(db, pids, entries, updates) {
+async function getProjectUpdates(db, pids, entries, usr, updates) {
   let projectsref = db.ref('projects')
 
   /* Create new projects that weren't in the mappings */
-  Object.entries(pids).filter(n => !n[1].pid).forEach(([togglpid]) => {
+  const newProjects = Object.entries(pids).filter(n => !n[1].pid)
+
+  await Promise.all(newProjects.map(async ([togglpid]) => {
+    let { data } = togglpid != 'undefined' ?
+      await toggl.get(`/api/v8/projects/${togglpid}`,users[usr].toggltoken) :
+      ({ data: { hex_color:'#bbbbbb', name:'[no project]' } })
+
     let pid = pids[togglpid].pid = projectsref.push().key;
     updates[`pidmapping/${togglpid}`] = pid;
-    updates[`projects/${pid}/color`] = d3.hsl(Math.random()*360,1.5,0.28).hex();
-  });
+    updates[`projects/${pid}/color`] = data.hex_color || d3.hsl(Math.random()*360,1.5,0.28).hex()
+    updates[`projects/${pid}/name`] = data.name
+  }))
+
   /* Update existing projects */
   entries.forEach(entry => {
     let pid = pids[entry.pid].pid;
@@ -196,30 +204,6 @@ async function createWatchers(db,watchlist,daysThatNeedUpdates){
   })));
 }
 
-async function getSumUpdates(db,watchlist){
-  // Create list of paths to update
-  var diffs = {}
-  const add = (key,val) => diffs[key] ? diffs[key] += val : diffs[key] = val
-  Object.keys(watchlist).forEach(path => {
-    if(watchlist[path].diff){
-      var {day,pid,uid} = watchlist[path].entry
-      add(`dailysums/${day}/projects/${pid}/users/${uid}/sum`,watchlist[path].diff)
-      add(`dailysums/${day}/projects/${pid}/sum`,watchlist[path].diff)
-      add(`dailysums/${day}/sum`,watchlist[path].diff)
-    }
-  })
-  // Retrieve the current values and save the sum
-  var sumupdates = {}
-  await Promise.all(Object.entries(diffs).map(([path,diff]) => new Promise((resolve,reject) => {
-    db.ref(path).once('value',snapshot => {
-      var val = +snapshot.val()
-      sumupdates[path] = val+diff
-      resolve()
-    },reject)
-  })))
-  return sumupdates
-}
-
 async function updateSums(db,daysThatNeedUpdates){
   const dailysums = db.ref('dailysums')
   const updates = {}
@@ -246,7 +230,7 @@ async function updateSums(db,daysThatNeedUpdates){
   return updates
 }
 
-export async function updateDatabase(period,entries,usr){
+export async function syncDatabase(period,entries,usr){
   
   toggl.get(`/api/v8/time_entries?start_date=${period[0].toISOString()}&end_date=${period[1].toISOString()}`,user.toggltoken)
 
@@ -258,9 +242,11 @@ export async function updateDatabase(period,entries,usr){
 
   // Get list of known project mappings
   let pids = await getPids(db,entries)
+
+  console.debug('pids',pids)
   
   // Add updates for the project information and create the ones that didn't exist
-  getProjectUpdates(db, pids, entries, updates)
+  await getProjectUpdates(db, pids, entries, usr, updates)
 
   // Add updates for the entries
   // returns a list of paths that need to be watched
@@ -273,6 +259,9 @@ export async function updateDatabase(period,entries,usr){
   // so that we know which ones get changed
   var watchers = await createWatchers(db,watchlist,daysThatNeedUpdates)
   
+  // console.debug('updates',updates)
+  console.debug('updates',updates)
+
   // Send the updates for the projects and entries
   await db.ref().update(updates)
   
@@ -281,9 +270,13 @@ export async function updateDatabase(period,entries,usr){
   // the watchers
   watchers.forEach(watcher => watcher.off())
 
+  console.debug('daysThatNeedUpdates',daysThatNeedUpdates)
+
   // Get updates for parent sums that need to be incremented
   var sumupdates = await updateSums(db,daysThatNeedUpdates)
-
+  
+  console.debug('sumupdates',sumupdates)
+  
   // Send the update of all the sums that need to be incremented
   await db.ref().update(sumupdates)
 }
@@ -337,4 +330,8 @@ export function ProjectWatcher(cb){
   watcher.onproject = cb => ( onproject = cb, watcher )
 
   return watcher
+}
+
+export async function projectSums([start,end]){
+  const db = firebase.database()
 }

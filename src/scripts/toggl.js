@@ -28,13 +28,14 @@ export async function report([start, end], user) {
         entry.daydiff = entry.start.diff(start, 'days')
         entry.day = entry.start.format('MM-DD-YYYY');
         entry.uid = user.uid
+        entry.duration = entry.end.diff(entry.start,'seconds')
     })
 
     console.groupCollapsed('Toggl data')
     console.log(entries)
     console.groupEnd()
 
-    database.updateDatabase([start,end],entries,user.uid)
+    database.syncDatabase([start,end],entries,user.uid)
 
     return entries
 }
