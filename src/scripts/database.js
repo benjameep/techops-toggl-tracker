@@ -1,5 +1,6 @@
 import  * as d3 from 'd3'
 import * as toggl from './toggl'
+import moment from 'moment'
 
 export let uid = ""
 export let user = {}
@@ -53,10 +54,10 @@ export function onUserData(cb){
   },cb)
 }
 
-export function projects(cb){
+export function onProject(pid,cb){
   const db = firebase.database()
-  var ref = db.ref('projects')
-  return new Promise((res,rej) => ref.once('value',snapshot => {
+  var ref = db.ref('projects').child(pid).on()
+  return new Promise((res,rej) => ref.on('value',snapshot => {
     var obj = {}
     snapshot.forEach(child => {
       obj[child.key] = child.val()
@@ -169,6 +170,7 @@ async function removeMissingEntries(db,[start,end],entries,usr,updates,daysThatN
         if(!Object.keys(pids).length){
           removalupdates = {
             [`dailysums/${day}`]: null,
+            [`days/${day}`]: null,
           }
           delete daysThatNeedUpdates[day]
           console.info(`day ${day} was removed`)
@@ -224,6 +226,7 @@ async function updateSums(db,daysThatNeedUpdates){
         daysum += projectsum
       })
       updates[`dailysums/${day}/sum`] = daysum
+      updates[`days/${day}`] = moment(day,'MM-DD-YYYY').unix()
       resolve()
     },reject)
   })))
@@ -332,6 +335,38 @@ export function ProjectWatcher(cb){
   return watcher
 }
 
-export async function projectSums([start,end]){
+export async function projectSums([start,end],cb){
   const db = firebase.database()
+  const daysref = db.ref('days')
+    .orderByValue()
+    .startAt(start.unix())
+    .endAt(end.unix())
+
+  const days = {}
+  daysref.on('value',snapshot => {
+    snapshot.forEach(day => {
+      days[day.key] = {}
+      db.ref(`/dailysums/${day.key}/pids`).on('value',snapshot => {
+        snapshot.forEach(pid => {
+          pid.forEach(uid => {
+            db.ref(`/dailysums/${day.key}/projects/${pid.key}/users/${uid.key}/sum`).on('value',snapshot => {
+              var id = pid.key+';'+uid.key
+              days[day.key][id] = {
+                id,
+                day:day.key,
+                pid:pid.key,
+                uid:uid.key,
+                sum:snapshot.val()
+              }
+              cb(null,days)
+            },cb)
+          })
+        })
+      },cb)
+      // db.ref(`/dailysums/${day.key}/projects`).on('value',snapshot => {
+      //   days[day.key] = snapshot.val()
+      //   cb(null,days)
+      // },cb)
+    })
+  },cb)
 }

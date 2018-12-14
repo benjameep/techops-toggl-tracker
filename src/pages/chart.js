@@ -79,7 +79,6 @@ export default function (drawfn) {
 
     dropdown = document.querySelectorAll('#users-dropdown a');
 
-    //FIXME: Doesn't remember the user between pages
     Array.from(dropdown).forEach(dropdownItem => {
         dropdownItem.addEventListener('click', () => {
             database.user = database.users[dropdownItem.getAttribute('value')];

@@ -1,6 +1,9 @@
 {
   "rules": {
     ".read": "root.child('github/'+auth.token.firebase.identities['github.com'][0]).exists()",
-		".write": "root.child('github/'+auth.token.firebase.identities['github.com'][0]).exists()"
+    ".write": "root.child('github/'+auth.token.firebase.identities['github.com'][0]).exists()",
+    "days":{ 
+      ".indexOn": ".value" 
+    }
   }
 }
